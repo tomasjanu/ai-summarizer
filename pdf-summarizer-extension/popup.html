@@ -52,6 +52,24 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    #savedSummaries ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    #savedSummaries li {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      background-color: #fafafa;
+    }
+    #savedSummaries li button {
+      background-color: #f44336;
+      margin-top: 5px;
+    }
+    #savedSummaries li button:hover {
+      background-color: #d32f2f;
+    }
   </style>
 </head>
 <body>
@@ -60,9 +78,17 @@
     <input type="text" id="apiKey" placeholder="Enter OpenAI API Key">
     <button id="saveApiKey">Save Key</button>
   </div>
-  <button id="summarize">Summarize PDF</button>
+  <div class="button-group">
+    <button id="summarize">Summarize PDF</button>
+    <button id="viewSaved">View Saved</button>
+  </div>
   <div class="loader" id="loader"></div>
   <div id="summary"></div>
+  <button id="saveSummary" style="display: none; margin-top: 10px;">Save Summary</button>
+  <div id="savedSummaries" style="display: none;">
+    <h3>Saved Summaries</h3>
+    <ul id="savedSummariesList"></ul>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

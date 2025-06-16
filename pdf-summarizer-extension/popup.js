@@ -2,8 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const apiKeyInput = document.getElementById('apiKey');
   const saveApiKeyButton = document.getElementById('saveApiKey');
   const summarizeButton = document.getElementById('summarize');
+  const saveSummaryButton = document.getElementById('saveSummary');
+  const viewSavedButton = document.getElementById('viewSaved');
   const summaryDiv = document.getElementById('summary');
+  const savedSummariesDiv = document.getElementById('savedSummaries');
+  const savedSummariesList = document.getElementById('savedSummariesList');
   const loader = document.getElementById('loader');
+
+  let currentFileUrl = '';
 
   // Load saved API key
   chrome.storage.local.get(['apiKey'], (result) => {
@@ -32,10 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryDiv.textContent = '';
     summaryDiv.style.color = 'black';
     loader.style.display = 'block'; // Show loader
+    saveSummaryButton.style.display = 'none';
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     if (tab && tab.url) {
+      try {
+        currentFileUrl = decodeURIComponent(new URL(tab.url).pathname.split('/').pop());
+        if (!currentFileUrl.toLowerCase().endsWith('.pdf')) {
+            currentFileUrl = "document.pdf"
+        }
+      } catch (e) {
+        currentFileUrl = "document.pdf"
+      }
+
       const processPdf = (pdfDataSource) => {
         chrome.scripting.executeScript({
           target: { tabId: tab.id },
@@ -69,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 summaryDiv.style.color = 'red';
               } else if (response.summary) {
                 summaryDiv.textContent = response.summary;
+                saveSummaryButton.style.display = 'block'; // Show save button
               } else {
                 summaryDiv.textContent = 'Failed to get summary. The response was empty.';
                 summaryDiv.style.color = 'red';
@@ -103,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (tab.url.endsWith('.pdf') || 
                  (tab.url.startsWith('filesystem:') && tab.url.includes('.pdf')) ||
                  tab.url.startsWith('blob:chrome-extension://') || // For PDFs in extension viewer
-                 tab.url.startsWith('http')) { // General http/https PDF links
+                 tab.url.startsWith('http')) { // General http/https PRDF links
         processPdf(tab.url); // Pass URL directly for web PDFs
       } else {
         loader.style.display = 'none';
@@ -114,6 +131,60 @@ document.addEventListener('DOMContentLoaded', () => {
       loader.style.display = 'none'; // Hide loader
       summaryDiv.textContent = 'Could not get active tab information.';
       summaryDiv.style.color = 'red';
+    }
+  });
+
+  // Save Summary
+  saveSummaryButton.addEventListener('click', () => {
+    const summaryText = summaryDiv.textContent;
+    if (summaryText && currentFileUrl) {
+      chrome.storage.local.get({ savedSummaries: [] }, (result) => {
+        const savedSummaries = result.savedSummaries;
+        savedSummaries.push({ file: currentFileUrl, summary: summaryText, date: new Date().toLocaleString() });
+        chrome.storage.local.set({ savedSummaries: savedSummaries }, () => {
+          summaryDiv.textContent = 'Summary saved.';
+          summaryDiv.style.color = 'green';
+          saveSummaryButton.style.display = 'none';
+          setTimeout(() => { 
+            summaryDiv.textContent = summaryText;
+            summaryDiv.style.color = 'black';
+           }, 2000);
+        });
+      });
+    }
+  });
+
+  // View Saved Summaries
+  viewSavedButton.addEventListener('click', () => {
+    if (savedSummariesDiv.style.display === 'none') {
+      chrome.storage.local.get({ savedSummaries: [] }, (result) => {
+        const summaries = result.savedSummaries;
+        savedSummariesList.innerHTML = '';
+        if (summaries.length > 0) {
+          summaries.sort((a,b) => new Date(b.date) - new Date(a.date));
+          summaries.forEach((item) => {
+            const li = document.createElement('li');
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = () => {
+                const newSummaries = summaries.filter(i => i.date !== item.date);
+                chrome.storage.local.set({ savedSummaries: newSummaries }, () => {
+                    li.remove();
+                });
+            };
+            li.innerHTML = `<b>${item.file}</b> (${item.date}):<br>${item.summary.replace(/\n/g, '<br>')}<br>`;
+            li.appendChild(deleteButton)
+            savedSummariesList.appendChild(li);
+          });
+        } else {
+          savedSummariesList.innerHTML = '<li>No summaries saved yet.</li>';
+        }
+        savedSummariesDiv.style.display = 'block';
+        viewSavedButton.textContent = 'Hide Saved';
+      });
+    } else {
+      savedSummariesDiv.style.display = 'none';
+      viewSavedButton.textContent = 'View Saved';
     }
   });
 });
