@@ -21,8 +21,15 @@ This is a Chrome extension that summarizes PDF files using an AI model.
 9.  To save the summary, click "Save Summary".
 10. To view saved summaries, click "View Saved".
 
+### Summarize Selected Text
+
+1. Select text on any webpage.
+2. Right-click and choose "Summarize Selection".
+3. The summary will be shown in an alert.
+
 ## Changes
 
+- Added a "Summarize Selection" context menu item for summarizing selected text on any page.
 - Added a "Save Summary" button to save the current summary.
 - Added a "View Saved" button to view saved summaries.
 - Saved summaries are stored in `chrome.storage.local`.

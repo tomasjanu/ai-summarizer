@@ -11,6 +11,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentFileUrl = '';
 
+  // Function to handle summarization of any text
+  function summarizeText(text, source) {
+    summaryDiv.textContent = '';
+    summaryDiv.style.color = 'black';
+    loader.style.display = 'block';
+    saveSummaryButton.style.display = 'none';
+    savedSummariesDiv.style.display = 'none';
+    viewSavedButton.textContent = 'View Saved';
+
+    currentFileUrl = source || 'Selected Text';
+
+    chrome.runtime.sendMessage({ action: "summarizeText", text: text }, (response) => {
+      loader.style.display = 'none';
+      if (chrome.runtime.lastError) {
+        summaryDiv.textContent = 'Error: ' + chrome.runtime.lastError.message;
+        summaryDiv.style.color = 'red';
+      } else if (response.error) {
+        summaryDiv.textContent = 'Summarization Error: ' + response.error;
+        summaryDiv.style.color = 'red';
+      } else if (response.summary) {
+        summaryDiv.textContent = response.summary;
+        saveSummaryButton.style.display = 'block';
+      } else {
+        summaryDiv.textContent = 'Failed to get summary.';
+        summaryDiv.style.color = 'red';
+      }
+    });
+  }
+
+  // Check for text from context menu on popup load
+  chrome.storage.local.get(['summarizeSelectionText'], (result) => {
+    if (result.summarizeSelectionText) {
+      // Clear the storage item so it's not reused
+      chrome.storage.local.remove('summarizeSelectionText');
+      // Summarize the text
+      summarizeText(result.summarizeSelectionText, 'Selected Text');
+    }
+  });
+
   // Load saved API key
   chrome.storage.local.get(['apiKey'], (result) => {
     if (result.apiKey) {
@@ -39,6 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryDiv.style.color = 'black';
     loader.style.display = 'block'; // Show loader
     saveSummaryButton.style.display = 'none';
+    savedSummariesDiv.style.display = 'none';
+    viewSavedButton.textContent = 'View Saved';
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -75,22 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const pdfText = result ? result.text : null;
           if (pdfText && pdfText.trim().length > 0) {
-            chrome.runtime.sendMessage({ action: "summarizePdf", pdfText: pdfText }, (response) => {
-              loader.style.display = 'none'; // Hide loader
-              if (chrome.runtime.lastError) {
-                summaryDiv.textContent = 'Error sending message to background: ' + chrome.runtime.lastError.message;
-                summaryDiv.style.color = 'red';
-              } else if (response.error) {
-                summaryDiv.textContent = 'Summarization Error: ' + response.error;
-                summaryDiv.style.color = 'red';
-              } else if (response.summary) {
-                summaryDiv.textContent = response.summary;
-                saveSummaryButton.style.display = 'block'; // Show save button
-              } else {
-                summaryDiv.textContent = 'Failed to get summary. The response was empty.';
-                summaryDiv.style.color = 'red';
-              }
-            });
+            summarizeText(pdfText, currentFileUrl);
           } else {
             loader.style.display = 'none'; // Hide loader
             summaryDiv.textContent = 'No text could be extracted from the PDF. The PDF might be image-based or protected. If this is a local file, ensure "Allow access to file URLs" is enabled for the extension.';
