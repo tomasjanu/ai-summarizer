@@ -1,12 +1,15 @@
 # PDF Summarizer AI
 
-A Chrome extension that automatically summarizes PDF documents using OpenAI's GPT-3.5 Turbo model. The extension extracts text from PDF files and generates concise summaries in Czech language.
+A Chrome extension that summarizes PDF documents and selected text using OpenAI's GPT-3.5 Turbo model. The extension extracts text from PDF files or web pages and generates concise summaries in Czech language.
 
 ## Features
 
 - 📄 **PDF Text Extraction**: Uses PDF.js to extract text from PDF documents
 - 🤖 **AI-Powered Summarization**: Leverages OpenAI's GPT-3.5 Turbo for intelligent summarization
 - 🇨🇿 **Czech Language Output**: Generates summaries in Czech language
+- 🖱️ **Summarize Selected Text**: Right-click any selected text on a webpage and choose "Summarize Selection"
+- 💾 **Save Summaries**: Save generated summaries for later viewing
+- 👀 **View & Delete Saved Summaries**: Easily view and delete your saved summaries
 - 🔒 **Secure API Key Storage**: Safely stores your OpenAI API key locally
 - 🌐 **Multiple PDF Sources**: Works with web URLs, local files, and Chrome's built-in PDF viewer
 - ⚡ **Offscreen Processing**: Uses Chrome's offscreen API for better performance and security
@@ -48,19 +51,26 @@ If you want to summarize local PDF files:
 
 ## Usage
 
+### Summarize a PDF File
+
 1. **Open a PDF file** in Chrome:
    - Web-based PDF (any HTTP/HTTPS URL ending in .pdf)
    - Local PDF file (requires "Allow access to file URLs" permission)
    - PDF opened in Chrome's built-in viewer
-
 2. **Click the extension icon** in your toolbar
-
 3. **Click "Summarize PDF"** button
-
 4. **Wait for processing** - the extension will:
    - Extract text from the PDF using PDF.js
    - Send the text to OpenAI's API
    - Display the summary in Czech language
+5. **Save the summary** (optional): Click "Save Summary" to store it for later
+6. **View saved summaries**: Click "View Saved" to see all your saved summaries. You can delete any summary from this list.
+
+### Summarize Selected Text on Any Webpage
+
+1. Select any text on a webpage
+2. Right-click and choose "Summarize Selection" from the context menu
+3. The summary will be shown in an alert or popup
 
 ## Technical Details
 
@@ -70,6 +80,8 @@ If you want to summarize local PDF files:
 - **Service Worker**: Background script for message handling
 - **Offscreen Document**: Secure API calls without exposing keys to content scripts
 - **Content Script Injection**: Dynamic PDF.js loading for text extraction
+- **Context Menu Integration**: Adds a right-click menu for summarizing selected text
+- **Local Storage**: Summaries and API key are stored using `chrome.storage.local`
 
 ### API Limits
 
@@ -90,11 +102,11 @@ If you want to summarize local PDF files:
 ```
 pdf-summarizer-extension/
 ├── manifest.json          # Extension configuration
-├── background.js           # Service worker for message handling
+├── background.js          # Service worker for message handling and context menu
 ├── offscreen.js           # Secure API call handler
 ├── offscreen.html         # Offscreen document template
 ├── popup.html             # Extension popup interface
-├── popup.js               # Popup functionality and PDF processing
+├── popup.js               # Popup functionality, PDF processing, summary saving/viewing
 ├── content_script_loader.js # Dynamic content script loading
 ├── lib/
 │   ├── pdf.mjs           # PDF.js library
@@ -111,11 +123,12 @@ pdf-summarizer-extension/
 The extension requires the following permissions:
 
 - `activeTab`: Access to the currently active tab for PDF processing
-- `storage`: Store API key securely
+- `storage`: Store API key and summaries securely
 - `scripting`: Inject PDF text extraction scripts
 - `offscreen`: Create offscreen documents for secure API calls
+- `contextMenus`: Add right-click menu for summarizing selected text
 - `https://api.openai.com/*`: Make requests to OpenAI API
-- `<all_urls>`: Access PDFs from any domain
+- `<all_urls>`: Access PDFs and web pages from any domain
 
 ## Error Handling
 
@@ -130,7 +143,8 @@ The extension provides detailed error messages for common issues:
 ## Privacy & Security
 
 - **API Key Storage**: Stored locally using Chrome's storage API
-- **No Data Retention**: PDF content is not stored or logged
+- **Summary Storage**: Saved summaries are stored locally and never sent to a server
+- **No Data Retention**: PDF content is not stored or logged externally
 - **Secure Communication**: API calls made through offscreen documents
 - **Minimal Permissions**: Only requests necessary permissions
 
@@ -164,7 +178,7 @@ The extension provides detailed error messages for common issues:
 1. Clone the repository
 2. Make your changes
 3. Reload the extension in `chrome://extensions/`
-4. Test with various PDF files
+4. Test with various PDF files and web pages
 
 ## License
 
